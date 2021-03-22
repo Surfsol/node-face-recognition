@@ -1,0 +1,31 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "nodemon index.js",
+    "rollup-min": "rollup -c rollup.config.js --environment minify:true",
+    "rollup": "rollup -c rollup.config.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@rollup/plugin-node-resolve": "^11.2.0",
+    "@tensorflow/tfjs-node": "^3.3.0",
+    "canvas": "^2.7.0",
+    "express": "^4.17.1",
+    "face-api.js": "^0.22.2",
+    "request": "^2.88.2",
+    "rollup": "^2.42.2",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-typescript2": "^0.30.0",
+    "rollup-plugin-uglify": "^6.0.4"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^17.1.0"
+  }
+}
