@@ -1,10 +1,10 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import request from 'request'
+const fs = require('fs');
+const path = require( 'path')
+const request = require('request')
 
 const baseDir = path.resolve(`${path.resolve()}/out`)
 
-export function saveFile(fileName, buf) {
+function saveFile(fileName, buf) {
   console.log({fileName, buf})
   if (!fs.existsSync(baseDir)) {
     fs.mkdirSync(baseDir)
@@ -16,7 +16,7 @@ export function saveFile(fileName, buf) {
 
 
 
-export const download = (url) => {
+const download = (url) => {
   const selfiePath = path.resolve(`${path.resolve()}/selfie`)
   if (!fs.existsSync(selfiePath)) {
     fs.mkdirSync(selfiePath)
@@ -30,4 +30,4 @@ export const download = (url) => {
 // download(url, selfiePath, () => {
 //   console.log('✅ Done!')
 // })
-
+module.exports={saveFile, download}

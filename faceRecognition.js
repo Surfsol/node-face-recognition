@@ -1,64 +1,99 @@
-import faceapi from 'face-api.js';
+const faceapi = require("face-api.js");
+const { canvas } = require("./canvas.js");
+const { faceDetectionOptions } = require("./faceDetection.js");
+const { faceDetectionNet } = require("./faceDetection.js");
+const { saveFile } = require("./saveFile.js");
+const { download } = require("./saveFile.js");
+const express = require("express");
 
-import {canvas} from './canvas.js'
-import {faceDetectionOptions, faceDetectionNet} from './faceDetection.js'
-import {saveFile, download} from './saveFile.js'
+const router = express.Router();
 
 //"https://api.tinify.com/output/fqrda3484ym3b7ghwc2neujnzmt6a8gy","https://api.tinify.com/output/f2j6y3cgk009dewfp55713xgta4cbnuv","https://api.tinify.com/output/ekdntqh6zfwt4uy39rjvmy4564jtnd8w"
-const REFERENCE_IMAGE = 'https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Hawkeye/1.jpg'
+// const REFERENCE_IMAGE =
+//   "https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Thor/2.jpg";
 
-// const urlImg = "https://api.tinify.com/output/fqrda3484ym3b7ghwc2neujnzmt6a8gy"
-// download(urlImg)
+// let arrayOfObj = [
+//   {
+//     img:
+//       "https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Hawkeye/1.jpg",
+//     verified: false,
+//     adult: false,
+//   },
+//   {
+//     img:
+//       "https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Thor/2.jpg",
+//     verified: false,
+//     adult: false,
+//   },
+//   {
+//     img:
+//       "https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Hawkeye/1.jpg",
+//     verified: false,
+//     adult: false,
+//   },
+// ];
 
-// const REFERENCE_IMAGE = './selfie'
 
-// saveFile('selfie.jpg', (urlImg).toBuffer('image/jpeg'))
+async function run(arrayOfObj, REFERENCE_IMAGE) {
+  await faceDetectionNet.loadFromDisk("./models");
+  await faceapi.nets.faceLandmark68Net.loadFromDisk("./models");
+  await faceapi.nets.faceRecognitionNet.loadFromDisk("./models");
 
-//const REFERENCE_IMAGE = './out/selfie.jpg'
+  for (let i = 0; i < arrayOfObj.length; i++) {
+    let QUERY_IMAGE = arrayOfObj[i]["img"];
+    const referenceImage = await canvas.loadImage(REFERENCE_IMAGE);
+    const queryImage = await canvas.loadImage(QUERY_IMAGE);
 
-const QUERY_IMAGE = 'https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Hawkeye/1.jpg'
-//const QUERY_IMAGE = './widow/1.jpg'
-async function run() {
-  await faceDetectionNet.loadFromDisk('./models')
-  await faceapi.nets.faceLandmark68Net.loadFromDisk('./models')
-  await faceapi.nets.faceRecognitionNet.loadFromDisk('./models')
+    // detect faces
+    const resultsRef = await faceapi
+      .detectAllFaces(referenceImage, faceDetectionOptions)
+      .withFaceLandmarks()
+      .withFaceDescriptors();
 
-  // put image on canvas
- 
-  const referenceImage = await canvas.loadImage(REFERENCE_IMAGE)
-  const queryImage = await canvas.loadImage(QUERY_IMAGE)
- 
-  // detect faces
- console.log('ref img',referenceImage)
-  const resultsRef = await faceapi.detectAllFaces(referenceImage, faceDetectionOptions)
-    .withFaceLandmarks()
-    .withFaceDescriptors()
-  console.log({resultsRef})
-  const resultsQuery = await faceapi.detectAllFaces(queryImage, faceDetectionOptions)
-    .withFaceLandmarks()
-    .withFaceDescriptors()
-  console.log({resultsQuery})
-  const faceMatcher = new faceapi.FaceMatcher(resultsRef)
- console.log({faceMatcher})
-  const labels = faceMatcher.labeledDescriptors
-    .map(ld => ld.label)
-  const refDrawBoxes = resultsRef
-    .map(res => res.detection.box)
-    .map((box, i) => new faceapi.draw.DrawBox(box, { label: labels[i] }))
-  const outRef = faceapi.createCanvasFromMedia(referenceImage)
-  console.log({outRef})
-  refDrawBoxes.forEach(drawBox => drawBox.draw(outRef))
-  console.log({outRef})
-  saveFile('referenceImage.jpg', (outRef).toBuffer('image/jpeg'))
+    const resultsQuery = await faceapi
+      .detectAllFaces(queryImage, faceDetectionOptions)
+      .withFaceLandmarks()
+      .withFaceDescriptors();
 
-  const queryDrawBoxes = resultsQuery.map(res => {
-    const bestMatch = faceMatcher.findBestMatch(res.descriptor)
-    return new faceapi.draw.DrawBox(res.detection.box, { label: bestMatch.toString() })
-  })
-  const outQuery = faceapi.createCanvasFromMedia(queryImage)
-  queryDrawBoxes.forEach(drawBox => drawBox.draw(outQuery))
-  saveFile('queryImage.jpg', (outQuery).toBuffer('image/jpeg'))
-  console.log('done, saved results to out/queryImage.jpg')
+    const faceMatcher = new faceapi.FaceMatcher(resultsRef, 0.55);
+
+    const labels = faceMatcher.labeledDescriptors.map((ld) => ld.label);
+
+    const refDrawBoxes = resultsRef
+      .map((res) => res.detection.box)
+      .map((box, i) => new faceapi.draw.DrawBox(box, { label: labels[i] }));
+    const outRef = faceapi.createCanvasFromMedia(referenceImage);
+
+    refDrawBoxes.forEach((drawBox) => drawBox.draw(outRef));
+    saveFile("referenceImage.jpg", outRef.toBuffer("image/jpeg"));
+
+    console.log({ resultsQuery });
+
+    resultsQuery.map((res) => {
+      const bestMatch = faceMatcher.findBestMatch(res.descriptor);
+      if (bestMatch._label === "person 1") {
+        arrayOfObj[i]["verified"] = true;
+      }
+    });
+  }
+  return arrayOfObj;
 }
 
-run()
+router.post("/face", async (req, res) => {
+  const images = req.body;
+  console.log("router", images);
+  const REFERENCE_IMAGE = images[0]["img"];
+  try {
+    // const newArray = await runFaceLoop(images)
+    console.log("in try");
+    const newArray = await run(images, REFERENCE_IMAGE);
+    console.log({ newArray });
+    if (newArray) {
+      console.log("in new array", newArray);
+      res.status(200).json(newArray);
+    }
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+module.exports = router;
