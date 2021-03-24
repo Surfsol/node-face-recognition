@@ -5,7 +5,6 @@ const request = require('request')
 const baseDir = path.resolve(`${path.resolve()}/out`)
 
 function saveFile(fileName, buf) {
-  console.log({fileName, buf})
   if (!fs.existsSync(baseDir)) {
     fs.mkdirSync(baseDir)
   }

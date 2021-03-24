@@ -4,8 +4,6 @@ const tensorflow = require("@tensorflow/tfjs-node");
 
 const faceapi = require("face-api.js");
 
-console.log("env", faceapi.env.monkeyPatch);
-
 // implements nodejs wrappers for HTMLCanvasElement, HTMLImageElement, ImageData
 //const canvas = require('canvas')
 const canvas = require("canvas");

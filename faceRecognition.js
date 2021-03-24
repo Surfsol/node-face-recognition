@@ -2,8 +2,6 @@ const faceapi = require("face-api.js");
 const { canvas } = require("./canvas.js");
 const { faceDetectionOptions } = require("./faceDetection.js");
 const { faceDetectionNet } = require("./faceDetection.js");
-const { saveFile } = require("./saveFile.js");
-const { download } = require("./saveFile.js");
 const express = require("express");
 
 const router = express.Router();
@@ -59,16 +57,6 @@ async function run(arrayOfObj, REFERENCE_IMAGE) {
 
     const labels = faceMatcher.labeledDescriptors.map((ld) => ld.label);
 
-    const refDrawBoxes = resultsRef
-      .map((res) => res.detection.box)
-      .map((box, i) => new faceapi.draw.DrawBox(box, { label: labels[i] }));
-    const outRef = faceapi.createCanvasFromMedia(referenceImage);
-
-    refDrawBoxes.forEach((drawBox) => drawBox.draw(outRef));
-    saveFile("referenceImage.jpg", outRef.toBuffer("image/jpeg"));
-
-    console.log({ resultsQuery });
-
     resultsQuery.map((res) => {
       const bestMatch = faceMatcher.findBestMatch(res.descriptor);
       if (bestMatch._label === "person 1") {
@@ -81,19 +69,18 @@ async function run(arrayOfObj, REFERENCE_IMAGE) {
 
 router.post("/face", async (req, res) => {
   const images = req.body;
-  console.log("router", images);
   const REFERENCE_IMAGE = images[0]["img"];
   try {
-    // const newArray = await runFaceLoop(images)
-    console.log("in try");
     const newArray = await run(images, REFERENCE_IMAGE);
-    console.log({ newArray });
     if (newArray) {
-      console.log("in new array", newArray);
       res.status(200).json(newArray);
     }
   } catch (err) {
     res.status(500).json(err);
   }
+});
+
+router.get("/", async (req, res) => {
+  res.status(200).json('Welcome to face recognition.')
 });
 module.exports = router;
