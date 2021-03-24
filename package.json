@@ -9,6 +9,9 @@
     "rollup-min": "rollup -c rollup.config.js --environment minify:true",
     "rollup": "rollup -c rollup.config.js"
   },
+  "engines": {
+    "node": "14.8.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
