@@ -1,6 +1,6 @@
-import faceapi from 'face-api.js';
+const faceapi = require('face-api.js')
 
-export const faceDetectionNet = faceapi.nets.ssdMobilenetv1
+const faceDetectionNet = faceapi.nets.ssdMobilenetv1
 // export const faceDetectionNet = tinyFaceDetector
 
 // SsdMobilenetv1Options
@@ -16,4 +16,6 @@ function getFaceDetectorOptions(net) {
     : new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold })
 }
 
-export const faceDetectionOptions = getFaceDetectorOptions(faceDetectionNet)
+const faceDetectionOptions = getFaceDetectorOptions(faceDetectionNet)
+
+module.exports= {faceDetectionOptions, faceDetectionNet, getFaceDetectorOptions}
