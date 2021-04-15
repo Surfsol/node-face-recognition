@@ -6,67 +6,79 @@ const express = require("express");
 
 const router = express.Router();
 
-//"https://api.tinify.com/output/fqrda3484ym3b7ghwc2neujnzmt6a8gy","https://api.tinify.com/output/f2j6y3cgk009dewfp55713xgta4cbnuv","https://api.tinify.com/output/ekdntqh6zfwt4uy39rjvmy4564jtnd8w"
-// const REFERENCE_IMAGE =
-//   "https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Thor/2.jpg";
+const arrayOfObj = [
+  {
+    img:
+      "http://res.cloudinary.com/siingly/image/upload/q_auto:eco/v1617847031/237ff04c3af706347dbad05c58dec184.png",
+    selfie: 1,
+    verified: 1,
+  },
+  {
+    adult: 0,
+    img:
+      "http://res.cloudinary.com/siingly/image/upload/q_auto:eco/v1617758703/88b3cbfc6e5a2509bf218687f90c5d5d.png",
+    verified: 0,
+  },
+  {
+    adult: 0,
+    img:
+      "http://res.cloudinary.com/siingly/image/upload/q_auto:eco/v1617758860/768be461b67303a1e67bfafbdc9ef780.png",
+    verified: 0,
+  },
+  {
+    adult: 0,
+    img:
+      "http://res.cloudinary.com/siingly/image/upload/q_auto:eco/v1617892548/dc6ff85305e5d4e454a138810fca2b1b.png",
+    verified: 0,
+  },
+  {
+    adult: 0,
+    img:
+      "http://res.cloudinary.com/siingly/image/upload/q_auto:eco/v1617892660/4aefdc24d47ddfe356ac4ee56d8b8f5b.png",
+    verified: 1,
+  },
+];
 
-// let arrayOfObj = [
-//   {
-//     img:
-//       "https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Hawkeye/1.jpg",
-//     verified: false,
-//     adult: false,
-//   },
-//   {
-//     img:
-//       "https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Thor/2.jpg",
-//     verified: false,
-//     adult: false,
-//   },
-//   {
-//     img:
-//       "https://raw.githubusercontent.com/WebDevSimplified/Face-Recognition-JavaScript/master/labeled_images/Hawkeye/1.jpg",
-//     verified: false,
-//     adult: false,
-//   },
-// ];
-
-
-async function run(arrayOfObj, REFERENCE_IMAGE) {
+async function run(arrayOfObj) {
   await faceDetectionNet.loadFromDisk("./models");
   await faceapi.nets.faceLandmark68Net.loadFromDisk("./models");
   await faceapi.nets.faceRecognitionNet.loadFromDisk("./models");
 
+  const REFERENCE_IMAGE = arrayOfObj[0]["img"];
   for (let i = 0; i < arrayOfObj.length; i++) {
     let QUERY_IMAGE = arrayOfObj[i]["img"];
     const referenceImage = await canvas.loadImage(REFERENCE_IMAGE);
     const queryImage = await canvas.loadImage(QUERY_IMAGE);
-
+    console.log({ referenceImage, queryImage });
     // detect faces
-    const resultsRef = await faceapi
-      .detectAllFaces(referenceImage, faceDetectionOptions)
-      .withFaceLandmarks()
-      .withFaceDescriptors();
+    try {
+      const resultsRef = await faceapi
+        .detectAllFaces(referenceImage, faceDetectionOptions)
+        .withFaceLandmarks()
+        .withFaceDescriptors();
+   
+      const resultsQuery = await faceapi
+        .detectAllFaces(queryImage, faceDetectionOptions)
+        .withFaceLandmarks()
+        .withFaceDescriptors();
 
-    const resultsQuery = await faceapi
-      .detectAllFaces(queryImage, faceDetectionOptions)
-      .withFaceLandmarks()
-      .withFaceDescriptors();
+      const faceMatcher = new faceapi.FaceMatcher(resultsRef, 0.55);
 
-    const faceMatcher = new faceapi.FaceMatcher(resultsRef, 0.55);
+      const labels = faceMatcher.labeledDescriptors.map((ld) => ld.label);
 
-    const labels = faceMatcher.labeledDescriptors.map((ld) => ld.label);
-
-    resultsQuery.map((res) => {
-      const bestMatch = faceMatcher.findBestMatch(res.descriptor);
-      if (bestMatch._label === "person 1") {
-        arrayOfObj[i]["verified"] = true;
-      }
-    });
+      resultsQuery.map((res) => {
+        const bestMatch = faceMatcher.findBestMatch(res.descriptor);
+        if (bestMatch._label === "person 1") {
+          arrayOfObj[i]["verified"] = true;
+        }
+      });
+    } catch (err) {
+      console.log(err);
+    }
   }
   return arrayOfObj;
 }
-
+run(arrayOfObj);
 router.post("/face", async (req, res) => {
   const images = req.body;
   const REFERENCE_IMAGE = images[0]["img"];
@@ -81,6 +93,6 @@ router.post("/face", async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  res.status(200).json('Welcome to face recognition.')
+  res.status(200).json("Welcome to face recognition.");
 });
 module.exports = router;
